@@ -1,0 +1,21 @@
+[package]
+name = "valet-guard"
+version = "0.1.0"
+edition = "2021"
+description = "Valet guard: a policy-enforcing vault that an AI agent can only drive through a function-call access key."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "5.30"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

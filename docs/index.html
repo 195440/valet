@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Valet console (replay)</title>
+<meta name="description" content="Replay of a recorded Valet console session: an AI agent pays, the vault decides. Caps and a kill switch are enforced on-chain, an oracle checks every receiver. Built at NEAR HACKATHON.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Valet">
+<meta property="og:title" content="Valet: a valet key for AI agents on NEAR">
+<meta property="og:description" content="Replay of a recorded Valet console session: an AI agent pays, the vault decides. Caps and a kill switch are enforced on-chain, an oracle checks every receiver. Built at NEAR HACKATHON.">
+<meta property="og:url" content="https://195440.github.io/valet/">
+<meta property="og:image" content="https://195440.github.io/valet/img/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="600">
+<meta property="og:image:alt" content="Valet: give an AI agent a wallet without giving it your keys. An on-chain spending guard for AI agents on NEAR. Replay the console in your browser.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Valet: a valet key for AI agents on NEAR">
+<meta name="twitter:description" content="Replay of a recorded Valet console session: an AI agent pays, the vault decides. Caps and a kill switch are enforced on-chain, an oracle checks every receiver. Built at NEAR HACKATHON.">
+<meta name="twitter:image" content="https://195440.github.io/valet/img/og-card.png">
+<meta name="twitter:image:alt" content="Valet: give an AI agent a wallet without giving it your keys. An on-chain spending guard for AI agents on NEAR. Replay the console in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 11'%3E%3Cpath fill='%23005fb0' d='M2 0h5v1h-5zM1 1h2v1h-2zM6 1h2v1h-2zM1 2h1v1h-1zM7 2h1v1h-1zM1 3h1v1h-1zM7 3h1v1h-1zM0 4h9v1h-9zM0 5h9v1h-9zM0 6h4v1h-4zM5 6h4v1h-4zM0 7h3v1h-3zM6 7h3v1h-3zM0 8h4v1h-4zM5 8h4v1h-4zM0 9h9v1h-9zM0 10h9v1h-9z'/%3E%3C/svg%3E">
+<style>
+/* IBM Plex Mono, served by the sandbox itself (SIL Open Font License, see fonts/OFL.txt). */
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/ibm-plex-mono-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/ibm-plex-mono-500.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/ibm-plex-mono-600.woff2") format("woff2"); }
+
+:root {
+  color-scheme: light;
+  --bg: #e9e1cd;
+  --ink: #322e25;
+  --card: #eee7d6;
+  --pop: #f4eddd;
+  --surface: #e1d7c0;
+  --muted: #655d4f;
+  --line: #bdb199;
+  --input: #f6f0e1;
+  --accent: #005fb0;
+  --btn: #005fb0;
+  --btn-ink: #fff7e9;
+  --block: #0667dc;
+  --paper: #fff7e9;
+  --sky: #83dcff;
+  --ok: #1d7a46;
+  --warn: #8f5a00;
+  --amber: #f0b34a;
+  --bad: #b53124;
+  --log-bg: #29251e;
+  --log-ink: #e9e1cd;
+  --log-dim: #a79f8c;
+  --log-line: #433d31;
+  --log-ok: #6fdc9b;
+  --log-warn: #f0b34a;
+  --log-bad: #ff8a7a;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --display: "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1f1c16;
+  --ink: #e9e1cd;
+  --card: #27231c;
+  --pop: #2c2820;
+  --surface: #2f2a21;
+  --muted: #a79f8c;
+  --line: #443e32;
+  --input: #19160f;
+  --accent: #83dcff;
+  --ok: #6fdc9b;
+  --warn: #f0b34a;
+  --bad: #ff8a7a;
+  --log-bg: #14120e;
+  --log-line: #38332a;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 400 13px/1.6 var(--mono); -webkit-font-smoothing: antialiased; transition: background-color .2s, color .2s; }
+::selection { background: var(--btn); color: var(--btn-ink); }
+[hidden] { display: none !important; }
+a { color: inherit; }
+code { font: inherit; font-weight: 500; overflow-wrap: anywhere; }
+button, input { font: inherit; color: inherit; border-radius: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.pad { padding: 24px; }
+
+h1, h2, h3 { margin: 0; font-family: var(--display); font-weight: 700; }
+h2 { font-size: 24px; line-height: 1.05; letter-spacing: -.03em; text-transform: uppercase; }
+h3 { font-size: 15px; line-height: 1.25; letter-spacing: -.01em; }
+.eyebrow { display: block; font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+
+/* ---- the dot-matrix pictures */
+.dots { display: block; }
+.dots .on { fill: currentColor; }
+.dots .off { fill: currentColor; opacity: .16; }
+
+/* ---- buttons */
+.btn { appearance: none; display: inline-flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--btn); background: var(--btn); color: var(--btn-ink); font: 500 13px/1.1 var(--mono); text-align: left; text-decoration: none; cursor: pointer; transition: transform .12s, box-shadow .12s, background-color .12s; }
+.btn::after { content: "\2197"; font-size: 15px; line-height: 1; }
+.btn:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--ink); }
+.btn:active:not(:disabled) { transform: none; box-shadow: none; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.dark { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn.ghost { background: transparent; border-color: var(--ink); color: var(--ink); }
+.btn.danger { background: #b53124; border-color: #b53124; color: #fff7e9; }
+.btn.small { min-height: 34px; padding: 6px 12px; font-size: 12px; gap: 14px; }
+.btn.block { display: flex; width: 100%; }
+.btn.plain::after { content: none; }
+
+input { width: 100%; border: 1px solid var(--line); background: var(--input); padding: 10px 12px; font-size: 13px; }
+input::placeholder { color: var(--muted); opacity: .7; }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+label { display: grid; gap: 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* ---- top bar, notice, ticker */
+.stick { position: sticky; top: 0; z-index: 10; }
+.top { display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; }
+.mark { width: 17px; height: 21px; color: var(--accent); }
+.wordmark { font: 700 21px/1 var(--display); letter-spacing: -.04em; text-transform: uppercase; }
+.sub { padding-left: 10px; border-left: 1px solid var(--line); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.latest { display: flex; align-items: center; gap: 12px; min-width: 0; max-width: 640px; margin-left: 18px; padding: 5px 12px; border: 1px solid var(--line); background: var(--card); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.latest > .muted { flex: none; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+.latest #latestText { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.latest .badge { flex: none; padding: 0 7px; font-size: 10.5px; }
+.latest .badge.paid { color: var(--ok); }
+.latest .badge.queued { color: var(--warn); }
+.latest .badge.stopped { color: var(--bad); }
+.latest .badge.owner { color: var(--accent); }
+.latest b { font-weight: 600; }
+.latest .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.spacer { flex: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid currentColor; padding: 5px 10px; font: 600 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.pill::before { content: ""; width: 8px; height: 8px; background: currentColor; }
+.pill.ok { color: var(--ok); }
+.pill.paused { color: var(--warn); }
+.pill.unknown { color: var(--muted); }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.icon-btn:hover { border-color: var(--ink); }
+.icon-btn .dots { width: 16px; height: 16px; }
+
+.notice { padding: 9px 24px; background: var(--amber); color: #322e25; border-bottom: 1px solid var(--ink); font: 600 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; text-align: center; }
+
+.ticker { height: 36px; overflow: hidden; display: flex; align-items: center; border-bottom: 1px solid var(--line); background: var(--surface); }
+.ticker .track { display: flex; align-items: center; flex: none; white-space: nowrap; animation: slide 70s linear infinite; }
+.ticker .half { display: flex; align-items: center; flex: none; }
+.ticker:hover .track { animation-play-state: paused; }
+.ticker span { padding: 0 22px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.ticker .dots { width: 11px; height: 11px; color: var(--accent); }
+@keyframes slide { to { transform: translateX(-50%); } }
+
+/* ---- hero */
+.shell { max-width: 1760px; margin: 0 auto; border-inline: 1px solid var(--line); }
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, .9fr); gap: 40px; align-items: end; padding: 38px 32px 34px; border-bottom: 1px solid var(--line); }
+.hero h1 { margin-top: 14px; font-size: clamp(40px, 5.2vw, 76px); line-height: .92; letter-spacing: -.045em; text-transform: uppercase; }
+.hero h1 em { display: block; font-style: normal; color: var(--accent); }
+.frame { position: relative; padding: 4px; background:
+  linear-gradient(var(--ink), var(--ink)) top left / 14px 1px no-repeat, linear-gradient(var(--ink), var(--ink)) top left / 1px 14px no-repeat,
+  linear-gradient(var(--ink), var(--ink)) top right / 14px 1px no-repeat, linear-gradient(var(--ink), var(--ink)) top right / 1px 14px no-repeat,
+  linear-gradient(var(--ink), var(--ink)) bottom left / 14px 1px no-repeat, linear-gradient(var(--ink), var(--ink)) bottom left / 1px 14px no-repeat,
+  linear-gradient(var(--ink), var(--ink)) bottom right / 14px 1px no-repeat, linear-gradient(var(--ink), var(--ink)) bottom right / 1px 14px no-repeat; }
+.frame-in { border: 1px solid var(--line); background: var(--card); }
+.termbar { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-bottom: 1px solid var(--line); font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.termbar b { color: var(--accent); font-weight: 600; }
+.how { list-style: none; margin: 0; padding: 0; }
+.how li { display: grid; grid-template-columns: 74px 1fr; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.45; }
+.how li:first-child { border-top: 0; }
+.how b { font-weight: 600; letter-spacing: .08em; color: var(--accent); }
+
+/* ---- layout */
+main { display: grid; grid-template-columns: minmax(320px, 3.3fr) minmax(0, 6.2fr) minmax(300px, 2.9fr); }
+.col { min-width: 0; border-right: 1px solid var(--line); }
+.col:last-child { border-right: 0; }
+.panel { padding: 28px 26px; border-bottom: 1px solid var(--line); }
+.panel > .eyebrow { margin-bottom: 12px; }
+.panel h2 { margin-bottom: 14px; }
+.panel p { margin: 0; }
+.mt6 { margin-top: 6px; } .mt10 { margin-top: 10px; } .mt12 { margin-top: 12px; } .mt14 { margin-top: 14px; }
+
+/* ---- the vault */
+.kpi { padding: 28px 26px 26px; background: var(--block); color: var(--paper); border-bottom: 1px solid var(--line); }
+.kpi .eyebrow { color: var(--sky); margin-bottom: 12px; }
+.kpi h2 { margin-bottom: 0; }
+.kpi .meta { margin-top: 8px; font-size: 11px; letter-spacing: .04em; color: rgba(255, 247, 233, .88); overflow-wrap: anywhere; }
+.kpi .label { display: flex; justify-content: space-between; margin: 20px 0 14px; font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 247, 233, .86); }
+.num { color: var(--paper); min-height: 63px; }
+.num .dots { max-width: 100%; height: auto; }
+.num .dots .off { opacity: .2; }
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(255, 247, 233, .3); font-size: 12px; }
+.kv span { color: rgba(255, 247, 233, .88); }
+.kv b { font-weight: 600; text-align: right; }
+.bar { height: 8px; margin: 2px 0 16px; background: rgba(255, 247, 233, .24); }
+.bar > i { display: block; height: 100%; width: 0; background: var(--paper); transition: width .5s; }
+.bar.hot > i { background: var(--amber); }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding-top: 14px; border-top: 1px solid rgba(255, 247, 233, .3); }
+.stat b { display: block; font: 700 30px/1 var(--display); letter-spacing: -.03em; }
+.stat span { display: block; margin-top: 4px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 247, 233, .86); }
+
+.label-chip { display: inline-block; border: 1px solid var(--line); background: var(--card); padding: 3px 9px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rules { list-style: none; margin: 12px 0 0; padding: 0; }
+.rules + .rules { margin-top: 0; }
+.rules li { position: relative; padding: 7px 0 7px 24px; border-top: 1px solid var(--line); }
+.rules li::before { position: absolute; left: 2px; top: 6px; font-weight: 600; font-size: 15px; line-height: 1.5; }
+.rules.can li::before { content: "\2713"; color: var(--ok); }
+.rules.cannot li::before { content: "\00d7"; color: var(--bad); font-size: 18px; top: 4px; }
+.dot { display: inline-block; width: 9px; height: 9px; margin-right: 10px; background: var(--muted); }
+.dot.on { background: var(--ok); }
+.dot.off { background: var(--bad); }
+.scale { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 16px; background: var(--line); border: 1px solid var(--line); }
+.scale div { padding: 8px 10px 9px; background: var(--card); border-top: 3px solid var(--line); }
+.scale b { display: block; font: 700 14px/1.2 var(--display); letter-spacing: -.01em; }
+.scale span { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.scale .allow { border-top-color: var(--ok); }
+.scale .warn { border-top-color: var(--amber); }
+.scale .block { border-top-color: var(--bad); }
+
+/* ---- the agent */
+.scenarios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.scenario { appearance: none; display: flex; flex-direction: column; gap: 9px; min-height: 196px; padding: 16px 16px 14px; border: 0; background: var(--card); text-align: left; cursor: pointer; transition: background-color .15s; }
+.scenario:hover:not(:disabled) { background: var(--pop); }
+.scenario:disabled { cursor: progress; opacity: .5; }
+.s-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.s-code { font: 500 11px/1 var(--mono); letter-spacing: .08em; color: var(--accent); }
+.s-ico { width: 28px; height: 28px; color: var(--accent); }
+.s-ico .dots { width: 100%; height: 100%; }
+.scenario strong { font: 700 18px/1.12 var(--display); letter-spacing: -.02em; }
+.scenario .blurb { flex: 1; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.scenario .bottom { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-height: 58px; padding-top: 9px; border-top: 1px solid var(--line); }
+.scenario .expect { font-size: 10.5px; line-height: 1.5; letter-spacing: .06em; text-transform: uppercase; }
+.scenario .expect em { font-style: normal; font-weight: 600; color: var(--accent); }
+.scenario .go { flex: none; display: inline-flex; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.scenario .go i { font-style: normal; font-size: 14px; line-height: 1; transition: transform .15s; }
+.scenario:hover:not(:disabled) .go i { transform: translate(3px, -3px); }
+.scenario.danger .s-code, .scenario.danger .s-ico, .scenario.danger .go, .scenario.danger .expect em { color: var(--bad); }
+.working { min-height: 18px; margin-top: 12px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.working:not(:empty)::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 10px; background: currentColor; animation: blink 1s steps(2, jump-none) infinite; }
+@keyframes blink { 50% { opacity: .15; } }
+.own summary { margin-top: 2px; padding: 6px 0; cursor: pointer; list-style: none; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+.own summary::-webkit-details-marker { display: none; }
+.own summary::after { content: " +"; }
+.own[open] summary::after { content: " \2212"; }
+.custom { display: grid; grid-template-columns: 1.6fr .6fr 1.4fr auto; gap: 12px; align-items: end; padding-top: 6px; }
+
+.log { background: var(--log-bg); color: var(--log-ink); border-bottom: 1px solid var(--line); }
+.log .termbar { padding: 14px 24px; border-bottom-color: var(--log-line); color: var(--log-dim); }
+.log .termbar h2 { margin: 0; font: 500 11px/1 var(--mono); letter-spacing: .12em; color: var(--log-dim); }
+.log .termbar h2::before { content: ">_ "; color: var(--sky); }
+.log .termbar b { color: var(--sky); }
+.empty { padding: 28px 24px; color: var(--log-dim); }
+.event { display: grid; gap: 7px; padding: 15px 24px 15px 21px; border-bottom: 1px solid var(--log-line); border-left: 3px solid var(--log-dim); animation: in .35s ease-out; }
+@keyframes in { from { opacity: 0; transform: translateY(-8px); } }
+.event.paid { border-left-color: var(--log-ok); }
+.event.queued { border-left-color: var(--log-warn); }
+.event.stopped { border-left-color: var(--log-bad); }
+.event.owner { border-left-color: var(--sky); }
+.event.thief { border-left-color: var(--log-bad); background: rgba(255, 138, 122, .07); }
+.ehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.badge { padding: 2px 8px; border: 1px solid currentColor; font: 600 11px/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.badge.paid { color: var(--log-ok); }
+.badge.queued { color: var(--log-warn); }
+.badge.stopped { color: var(--log-bad); }
+.badge.owner { color: var(--sky); }
+.who { font-weight: 600; color: var(--paper); }
+.event code { color: var(--sky); }
+.event .muted, .event .dim { color: var(--log-dim); }
+.time { margin-left: auto; font-size: 11px; color: var(--log-dim); }
+.reasons { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 5px; }
+.reasons li { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: baseline; }
+.w { text-align: center; border: 1px solid var(--log-line); font: 600 11px/1.6 var(--mono); color: var(--log-dim); }
+.w.pos { color: var(--log-bad); border-color: rgba(255, 138, 122, .5); }
+.w.neg { color: var(--log-ok); border-color: rgba(111, 220, 155, .5); }
+.reasons .code { font-weight: 600; font-size: 11px; letter-spacing: .03em; color: var(--paper); }
+.evidence { margin-top: 2px; font-size: 11px; color: var(--log-dim); overflow-wrap: anywhere; }
+.memo { padding-left: 10px; border-left: 1px solid var(--log-line); color: var(--log-dim); }
+.memo q { color: var(--log-ink); quotes: "\201c" "\201d"; }
+.tx { font-size: 11px; color: var(--log-dim); }
+.attempts { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 7px; }
+.attempts li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; }
+.mark-x { width: 16px; height: 16px; margin-top: 2px; display: grid; place-items: center; border: 1px solid var(--log-bad); color: var(--log-bad); font: 600 12px/1 var(--mono); }
+.mark-x.bad { background: var(--log-bad); color: var(--log-bg); }
+.by { font-size: 11.5px; color: var(--log-dim); }
+
+/* ---- the owner */
+.pending { display: grid; gap: 6px; margin-top: 10px; padding: 14px; border: 1px solid var(--ink); background: var(--pop); }
+.pending b { font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--card); padding: 2px 3px 2px 9px; font-size: 12px; }
+.tag button { width: 22px; height: 22px; padding: 0; border: 0; background: none; font-size: 16px; line-height: 1; color: var(--muted); cursor: pointer; }
+.tag button:hover { color: var(--bad); }
+.lists { display: grid; gap: 22px; }
+.lists h3 { margin-bottom: 10px; }
+.addrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+.danger-zone { background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(181, 49, 36, .07) 10px 20px); }
+
+/* ---- the question to the human, toast, gate, footer */
+.overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(41, 37, 30, .68); }
+.modal { width: min(640px, 100%); background: var(--pop); border: 1px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); }
+.modal-bar { display: flex; align-items: center; justify-content: space-between; padding: 11px 20px; background: var(--ink); color: var(--bg); font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.modal-bar b { display: inline-flex; align-items: center; gap: 8px; color: var(--sky); font-weight: 600; }
+.modal-bar b::before { content: ""; width: 8px; height: 8px; background: currentColor; animation: blink 1s steps(2, jump-none) infinite; }
+:root[data-theme="dark"] .modal-bar b { color: #005fb0; }
+.modal-body { display: grid; gap: 16px; padding: 24px; }
+.modal h2 { margin: 0; font-size: 32px; letter-spacing: -.035em; }
+.modal .big { font-size: 15px; line-height: 1.55; }
+.modal .big b, .modal b { font-weight: 600; }
+.modal .note { padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); }
+.modal .reasons { margin-top: 8px; }
+.modal .w { border-color: var(--line); }
+.modal .w.pos { color: var(--bad); border-color: var(--bad); }
+.modal .w.neg { color: var(--ok); border-color: var(--ok); }
+.modal .reasons .code { color: var(--ink); }
+.modal .evidence { color: var(--muted); }
+.stack { display: grid; gap: 12px; }
+.buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.buttons .btn { flex: 1 1 220px; }
+
+#toast { position: fixed; left: 50%; bottom: 24px; z-index: 30; max-width: min(90vw, 640px); transform: translateX(-50%); padding: 12px 18px; border: 1px solid var(--ink); background: #b53124; color: #fff7e9; box-shadow: 4px 4px 0 var(--ink); }
+#gate { max-width: 640px; margin: 16vh auto 0; padding: 28px; border: 1px solid var(--ink); background: var(--pop); box-shadow: 8px 8px 0 var(--ink); }
+#gate h3 { font-size: 22px; letter-spacing: -.02em; }
+
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 32px; padding: 26px 32px; background: var(--log-bg); color: var(--log-ink); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.foot b { font-weight: 500; color: var(--sky); }
+
+@media (max-width: 1240px) {
+  .custom { grid-template-columns: 1fr 1fr; }
+  .custom .btn { grid-column: 1 / -1; }
+}
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr; }
+  .col { border-right: 0; }
+  .hero { grid-template-columns: 1fr; gap: 28px; padding: 32px 24px; }
+  .scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .latest { display: none; }
+}
+@media (max-width: 600px) {
+  .top { padding: 0 14px; gap: 10px; }
+  .sub { display: none; }
+  .panel, .kpi { padding: 22px 16px; }
+  .hero { padding: 28px 16px; }
+  .scenarios { grid-template-columns: 1fr; }
+  .scenario { min-height: 0; }
+  .custom { grid-template-columns: 1fr; }
+  .event { padding-inline: 14px; }
+  .foot { padding: 22px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ticker .track, .event, .working::before, .modal-bar b::before { animation: none; }
+  .bar > i, .btn, .scenario, .scenario .go i { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="rp-banner" role="note"><b>Replay</b><span>A recording of a real session: the vault, the oracle and the chain were real, and the AI agent's decisions are the buttons. Nothing on this page is live.</span></div>
+<noscript><p class="pad">This replay needs JavaScript to play the recorded session. It loads no outside scripts and talks to no server.</p></noscript>
+
+<div id="gate" hidden>
+  <h3>This is a replay</h3>
+  <p class="muted mt10">No access token is needed here: the page replays one recorded session of the console and never talks to a vault. To use the live console, run <code>npm run sandbox</code> and open the link it prints.</p>
+</div>
+
+<div id="app" hidden>
+<div class="stick">
+<header class="top" id="top">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 9 11" aria-hidden="true"><path fill="currentColor" d="M2 0h5v1h-5zM1 1h2v1h-2zM6 1h2v1h-2zM1 2h1v1h-1zM7 2h1v1h-1zM1 3h1v1h-1zM7 3h1v1h-1zM0 4h9v1h-9zM0 5h9v1h-9zM0 6h4v1h-4zM5 6h4v1h-4zM0 7h3v1h-3zM6 7h3v1h-3zM0 8h4v1h-4zM5 8h4v1h-4zM0 9h9v1h-9zM0 10h9v1h-9z"/></svg>
+    <span class="wordmark">Valet</span>
+    <span class="sub">console</span>
+  </div>
+  <div class="latest" id="latest" aria-hidden="true"><span class="muted">Latest result</span><span id="latestText">none yet, pick a story below</span></div>
+  <div class="spacer"></div>
+  <span class="pill unknown" id="status" role="status">connecting…</span>
+  <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to the dark theme"></button>
+</header>
+
+<div class="notice" id="pausedNotice" role="alert" hidden>The vault is paused. It pays nobody, not even the vendor on the allow list.</div>
+</div>
+<div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+<div class="shell">
+<section class="hero" aria-label="What this is">
+  <div>
+    <span class="eyebrow">00 / Valet console</span>
+    <h1>The agent pays.<em>The vault decides.</em></h1>
+  </div>
+  <div class="frame">
+    <div class="frame-in">
+      <div class="termbar"><span>&gt;_ how it works</span><b>replay</b></div>
+      <ol class="how">
+        <li><b>GUARD</b><span>A contract on the vault. Caps, lists and the pause switch are enforced on-chain.</span></li>
+        <li><b>ORACLE</b><span>Scores every receiver and signs allow, warn or block. The agent cannot forge it.</span></li>
+        <li><b>OWNER</b><span>That is you. Approve the odd ones, edit the lists, or pull the plug.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="col" aria-label="The vault">
+    <section class="kpi">
+      <span class="eyebrow">01 / Vault</span>
+      <h2>The vault</h2>
+      <p class="meta"><span id="vaultId">vault</span><br><span id="net">sandbox</span></p>
+      <div class="label"><span>Balance</span><span>NEAR</span></div>
+      <div class="num"><span class="sr" id="balance">–</span><span id="balancePx"></span></div>
+      <div class="kv mt14"><span>Per payment, at most</span><b id="perTx">–</b></div>
+      <div class="kv"><span id="windowLabel">Per day, at most</span><b id="windowText">–</b></div>
+      <div class="bar" id="windowBar" aria-hidden="true"><i></i></div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="panel">
+      <span class="eyebrow">02 / Key</span>
+      <h2>The agent's key</h2>
+      <span class="label-chip">A function-call key</span>
+      <ul class="rules can"><li>call <code>pay</code> on this vault</li></ul>
+      <ul class="rules cannot">
+        <li>send NEAR out of the vault</li>
+        <li>call <code>withdraw</code></li>
+        <li>add or remove keys</li>
+        <li>deploy code, or call any other contract</li>
+      </ul>
+      <p class="muted small mt14">NEAR itself enforces this list, not Valet's software: the thief scenario below proves it. <span id="keyNote"></span></p>
+    </section>
+
+    <section class="panel">
+      <span class="eyebrow">03 / Oracle</span>
+      <h2>The oracle</h2>
+      <p><span class="dot" id="oracleDot"></span><span id="oracleText">checking…</span></p>
+      <p class="muted small mt6" id="oracleUrl"></p>
+      <div class="scale" aria-label="What the risk score decides">
+        <div class="allow"><b>0 – 29</b><span>allow</span></div>
+        <div class="warn"><b>30 – 69</b><span>ask you</span></div>
+        <div class="block"><b>70 +</b><span>block</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col" aria-label="The agent">
+    <section class="panel" id="stories">
+      <span class="eyebrow">04 / Play</span>
+      <h2>Play the AI agent</h2>
+      <div class="scenarios" id="scenarios"></div>
+      <div class="working" id="working" role="status"></div>
+      <details class="own"><summary>Or write your own payment</summary>
+      <form class="custom" id="customForm" autocomplete="off">
+        <label>Pay this account<input id="cReceiver" list="knownAccounts" placeholder="account.test.near" required spellcheck="false"></label>
+        <label>NEAR<input id="cAmount" inputmode="decimal" placeholder="0.5" required></label>
+        <label>Note the agent writes<input id="cMemo" placeholder="optional" maxlength="200"></label>
+        <button class="btn" id="cSend" type="submit">Send</button>
+        <datalist id="knownAccounts"></datalist>
+      </form>
+      </details>
+    </section>
+
+    <section class="log" aria-label="What the agent did">
+      <div class="termbar"><h2>What the agent did</h2><span id="feedCount"></span></div>
+      <div id="feed" role="log" aria-live="polite">
+        <p class="empty" id="feedEmpty">Nothing yet. Pick a story above.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="col" aria-label="The owner">
+    <section class="panel">
+      <span class="eyebrow">05 / Owner</span>
+      <h2>You are the owner</h2>
+      <h3>Waiting for your approval</h3>
+      <div id="queue"></div>
+    </section>
+
+    <section class="panel danger-zone">
+      <span class="eyebrow">06 / Kill switch</span>
+      <h2>Kill switch</h2>
+      <p class="muted small">While paused, the vault pays nobody, not even the vendor on the allow list.</p>
+      <div class="actions mt12"><button class="btn block danger" id="pauseBtn" type="button">Pause the vault</button></div>
+    </section>
+
+    <section class="panel">
+      <span class="eyebrow">07 / Lists</span>
+      <h2>Lists</h2>
+      <div class="lists">
+        <div>
+          <h3>Allow list <span class="muted small">(always paid, within limits)</span></h3>
+          <div class="tags" id="allowTags"></div>
+          <form class="addrow" id="allowForm" autocomplete="off"><input id="allowInput" placeholder="account.test.near" aria-label="Account to allow" spellcheck="false"><button class="btn ghost small plain" type="submit">Allow</button></form>
+        </div>
+        <div>
+          <h3>Deny list <span class="muted small">(never paid)</span></h3>
+          <div class="tags" id="denyTags"></div>
+          <form class="addrow" id="denyForm" autocomplete="off"><input id="denyInput" placeholder="account.test.near" aria-label="Account to deny" spellcheck="false"><button class="btn ghost small plain" type="submit">Deny</button></form>
+        </div>
+      </div>
+      <p class="muted small mt14">Your owner key never leaves the sandbox. This page can send only the commands you see here.</p>
+    </section>
+  </div>
+</main>
+</div>
+
+<footer class="foot">
+  <span><b>Valet</b> · give an AI agent a wallet without giving it your keys</span>
+  <span>Local sandbox · nothing leaves this machine</span>
+  <span>Built at <b>NEAR HACKATHON</b> · AI Security &amp; Defense</span>
+</footer>
+</div>
+
+<div class="overlay" id="askOverlay" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askBody">
+    <div class="modal-bar"><span>Action required</span><b>Waiting for you</b></div>
+    <div class="modal-body">
+      <h2 id="askTitle">The agent needs a human</h2>
+      <div id="askBody" class="stack"></div>
+      <div class="buttons">
+        <button class="btn" id="askYes" type="button">Yes, put it in the approval queue</button>
+        <button class="btn dark" id="askNo" type="button">No, refuse</button>
+      </div>
+      <p class="muted small" id="askTimer"></p>
+    </div>
+  </div>
+</div>
+<div id="toast" role="alert" hidden></div>
+
+<script type="application/json" id="valet-recording">{"format":1,"recordedAt":"2026-11-11T14:36:52.457Z","source":"npm run sandbox: the real contracts, oracle and console API on a local NEAR chain (nearcore 2.14.0)","initial":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"49.998085959276589","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"0","stats":{"paid":0,"queued":0,"blocked":0,"approved":0,"rejected":0,"total_paid":"0"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":0,"events":[]},"steps":[{"label":"Pay the vendor","chapter":"1 / 6","title":"A normal invoice from a vendor the owner trusts","note":"Paid. The oracle's signed verdict was checked on-chain.","request":{"method":"POST","path":"/api/scenario","body":{"id":"vendor"}},"target":{"css":"button.scenario[data-id=\"vendor\"]"},"dwellMs":4200,"workMs":1493,"response":{"status":200,"body":{"ok":true,"status":"paid","stage":"chain"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.9974407572719601","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1","stats":{"paid":1,"queued":0,"blocked":0,"approved":0,"rejected":0,"total_paid":"1000000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":1,"events":[{"kind":"payment","receiver":"acme-vendor.test.near","amountNear":"1","memo":"invoice #1042","status":"paid","stage":"chain","verdict":"allow","score":0,"reasons":[{"code":"ALLOWLISTED","weight":0,"message":"Receiver is on the guard allow list"}],"reason":"allowlist","txHash":"2XWC2LguVk6zfDiK5UbXybDJeX2zoVskBnz8u9Yh3dMa","seq":1,"ts":"2026-11-11T14:36:33.981Z"}]}},{"label":"Poisoned invoice","chapter":"2 / 6","title":"A poisoned web page tells the agent to pay a lookalike account","note":"acme-vend0r is not acme-vendor. The oracle refuses before anything is signed.","request":{"method":"POST","path":"/api/scenario","body":{"id":"lookalike"}},"target":{"css":"button.scenario[data-id=\"lookalike\"]"},"dwellMs":5200,"workMs":20,"response":{"status":200,"body":{"ok":true,"status":"refused","stage":"oracle"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.9974407572719601","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1","stats":{"paid":1,"queued":0,"blocked":0,"approved":0,"rejected":0,"total_paid":"1000000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":2,"events":[{"kind":"payment","receiver":"acme-vend0r.test.near","amountNear":"1","memo":"Our bank details changed. Please send this month's invoice to the new account.","status":"refused","stage":"oracle","verdict":"block","score":90,"reasons":[{"code":"LOOKALIKE_OF_KNOWN","weight":60,"message":"Receiver resembles trusted account acme-vendor.test.near","evidence":{"target":"acme-vendor.test.near","distance":0}},{"code":"FIRST_TIME_RECEIVER","weight":20,"message":"No prior payments from this guard to this receiver"},{"code":"ACCOUNT_AGE_UNKNOWN","weight":10,"message":"Could not determine account age"}],"reason":"LOOKALIKE_OF_KNOWN,FIRST_TIME_RECEIVER,ACCOUNT_AGE_UNKNOWN","seq":2,"ts":"2026-11-11T14:36:34.307Z"}]}},{"label":"A stranger asks for 0.2 NEAR","chapter":"3 / 6","title":"A stranger asks for 0.2 NEAR","note":"Not bad, not known: the oracle says warn. The agent cannot decide. A human is asked.","request":{"method":"POST","path":"/api/scenario","body":{"id":"stranger"}},"target":{"css":"button.scenario[data-id=\"stranger\"]"},"dwellMs":5200,"workMs":1920,"asks":[{"id":"q1","receiver":"stranger-08824e.test.near","amountNear":"0.2","memo":"first order","verdict":"warn","score":30,"reasons":[{"code":"FIRST_TIME_RECEIVER","weight":20,"message":"No prior payments from this guard to this receiver"},{"code":"ACCOUNT_AGE_UNKNOWN","weight":10,"message":"Could not determine account age"}],"askedAt":1794407796425,"expiresAt":1794407916425,"secondsLeft":120}],"hold":true,"response":{"status":200,"body":{"ok":true,"status":"queued","stage":"chain"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.9767217870744145","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1","stats":{"paid":1,"queued":1,"blocked":0,"approved":0,"rejected":0,"total_paid":"1000000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[{"id":"1","receiver":"stranger-08824e.test.near","amountNear":"0.2","expiresInMin":60}],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":3,"events":[{"kind":"payment","receiver":"stranger-08824e.test.near","amountNear":"0.2","memo":"first order","status":"queued","stage":"chain","verdict":"warn","score":30,"reasons":[{"code":"FIRST_TIME_RECEIVER","weight":20,"message":"No prior payments from this guard to this receiver"},{"code":"ACCOUNT_AGE_UNKNOWN","weight":10,"message":"Could not determine account age"}],"reason":"oracle_warn","pendingId":"1","txHash":"HH9jgzK3B7Txb7CRA6bDKmDhZghivzFLWF7p2e6ZE4MS","seq":3,"ts":"2026-11-11T14:36:37.614Z"}]}},{"label":"answer Yes to the question","chapter":"3 / 6","title":"Yes only queues the payment","note":"No NEAR has moved. The owner approves it, as a separate on-chain transaction.","request":{"method":"POST","path":"/api/answer","body":{"approve":true,"id":"q1"}},"target":{"css":"#askYes"},"dwellMs":2500,"workMs":682,"response":{"status":200,"body":{"ok":true}}},{"label":"Approve the queued payment","chapter":"3 / 6","title":"The owner approves it","note":"Only now does the NEAR move: a separate on-chain transaction, signed by the owner and not by the agent.","request":{"method":"POST","path":"/api/owner","body":{"action":"approve","arg":"1"}},"target":{"css":"#queue .pending button","text":"Approve"},"dwellMs":4000,"workMs":2413,"response":{"status":200,"body":{"ok":true,"message":"You approved payment #1. The vault sent it."}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.797209086580148","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":0,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":4,"events":[{"kind":"owner","action":"approve","arg":"1","ok":true,"message":"You approved payment #1. The vault sent it.","seq":4,"ts":"2026-11-11T14:36:40.037Z"}]}},{"label":"The 900% APY vault","chapter":"4 / 6","title":"An account that three people reported, with evidence","note":"Blocked by the shared registry. The reasons carry the reporters' evidence.","request":{"method":"POST","path":"/api/scenario","body":{"id":"scam"}},"target":{"css":"button.scenario[data-id=\"scam\"]"},"dwellMs":5200,"workMs":19,"response":{"status":200,"body":{"ok":true,"status":"refused","stage":"oracle"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.797209086580148","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":0,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":5,"events":[{"kind":"payment","receiver":"quick-yield-vault.test.near","amountNear":"2","memo":"a web page said this vault pays 900% APY","status":"refused","stage":"oracle","verdict":"block","score":100,"reasons":[{"code":"REGISTRY_REPORTS","weight":100,"message":"3 distinct reporters flagged this account","evidence":{"reporters":["witness1-fb20ab.test.near","witness2-e39201.test.near","witness3-dff6dc.test.near"],"reports":[{"reporter":"witness1-fb20ab.test.near","category":"drainer","evidence_url":"https://example.com/reports/1"},{"reporter":"witness2-e39201.test.near","category":"drainer","evidence_url":"https://example.com/reports/2"},{"reporter":"witness3-dff6dc.test.near","category":"drainer","evidence_url":"https://example.com/reports/3"}]}},{"code":"FIRST_TIME_RECEIVER","weight":20,"message":"No prior payments from this guard to this receiver"},{"code":"ACCOUNT_AGE_UNKNOWN","weight":10,"message":"Could not determine account age"}],"reason":"REGISTRY_REPORTS,FIRST_TIME_RECEIVER,ACCOUNT_AGE_UNKNOWN","seq":5,"ts":"2026-11-11T14:36:40.361Z"}]}},{"label":"Pay 9 NEAR","chapter":"5 / 6","title":"Even a trusted vendor cannot take more than the cap","note":"The vault allows 5 NEAR per payment. The contract itself says no, whatever the oracle thinks.","request":{"method":"POST","path":"/api/scenario","body":{"id":"overcap"}},"target":{"css":"button.scenario[data-id=\"overcap\"]"},"dwellMs":5200,"workMs":1197,"response":{"status":200,"body":{"ok":true,"status":"blocked","stage":"chain"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.7762892569954072","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":1,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":6,"events":[{"kind":"payment","receiver":"acme-vendor.test.near","amountNear":"9","memo":"annual prepayment","status":"blocked","stage":"chain","verdict":"allow","score":0,"reasons":[{"code":"ALLOWLISTED","weight":0,"message":"Receiver is on the guard allow list"}],"reason":"per_tx_cap","txHash":"8mZqamku4QKauyHRvKDFjMQSz7N6V6iGoUCpEiQFuRBt","seq":6,"ts":"2026-11-11T14:36:41.862Z"}]}},{"label":"The agent's key is stolen","chapter":"6 / 6","title":"The agent's key is stolen","note":"The thief skips Valet's software and goes straight at the chain with the key. Every attempt is refused, each with the real error. The attacker receives 0 NEAR.","request":{"method":"POST","path":"/api/scenario","body":{"id":"thief"}},"target":{"css":"button.scenario[data-id=\"thief\"]"},"dwellMs":9000,"workMs":5055,"response":{"status":200,"body":{"ok":true,"attempts":7,"accepted":0}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.7749457879888543","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":5,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":7,"events":[{"kind":"thief","results":[{"label":"pay the attacker, no oracle verdict","outcome":"stopped","by":"guard contract","detail":"attestation_required","txHash":"JCWj5azc21YQamFYsxWcdwhtSG4G4XSXY26WXiu15J4p"},{"label":"pay the attacker, self-signed 'allow' verdict","outcome":"stopped","by":"guard contract","detail":"bad_signature","txHash":"8Lnq5cu3aquq6FJ3k8pViyEQGMpLhnzPhZPVDyVCtTct"},{"label":"pay the attacker, replay the vendor's real verdict","outcome":"stopped","by":"guard contract","detail":"bad_signature","txHash":"C1teUXLjKnd8VuG8fq1JUpgxZqZkh9twufW2jSKFhrMo"},{"label":"pay the allow-listed vendor 9 NEAR (cap is 5)","outcome":"stopped","by":"guard contract","detail":"per_tx_cap","txHash":"G5tH7WtBBnPdgiVHgxtqxG3zLWh7GhFRJnSyTSh9YSJq"},{"label":"plain NEAR transfer to the attacker","outcome":"stopped","by":"NEAR protocol","detail":"RequiresFullAccess"},{"label":"call withdraw() on the vault","outcome":"stopped","by":"NEAR protocol","detail":"MethodNameMismatch"},{"label":"add a full-access key for the attacker","outcome":"stopped","by":"NEAR protocol","detail":"RequiresFullAccess"}],"stopped":7,"accepted":0,"seq":7,"ts":"2026-11-11T14:36:47.225Z"}]}},{"label":"Pause the vault","chapter":"The kill switch","title":"The owner pulls the plug","note":"Pause the vault and even the allow-listed vendor is blocked.","request":{"method":"POST","path":"/api/owner","body":{"action":"pause"}},"target":{"css":"#pauseBtn"},"dwellMs":1800,"workMs":1604,"response":{"status":200,"body":{"ok":true,"message":"You paused the vault. It pays nobody until you unpause it."}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.7956736448682161","paused":true,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":5,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":8,"events":[{"kind":"owner","action":"pause","ok":true,"message":"You paused the vault. It pays nobody until you unpause it.","seq":8,"ts":"2026-11-11T14:36:49.135Z"}]}},{"label":"Pay the vendor (while paused)","chapter":"The kill switch","title":"The same trusted vendor, now refused","note":"The contract is paused, so it pays nobody. The oracle's opinion no longer matters.","request":{"method":"POST","path":"/api/scenario","body":{"id":"vendor"}},"target":{"css":"button.scenario[data-id=\"vendor\"]"},"dwellMs":4800,"workMs":903,"response":{"status":200,"body":{"ok":true,"status":"blocked","stage":"chain"}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.7747538103644205","paused":true,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":6,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":9,"events":[{"kind":"payment","receiver":"acme-vendor.test.near","amountNear":"1","memo":"invoice #1042","status":"blocked","stage":"chain","verdict":"allow","score":0,"reasons":[{"code":"ALLOWLISTED","weight":0,"message":"Receiver is on the guard allow list"}],"reason":"paused","txHash":"BD83qppMy3onq9AUUcYzojM1zL9mCXWHvZJaBPvQmSMZ","seq":9,"ts":"2026-11-11T14:36:50.342Z"}]}},{"label":"Unpause the vault","chapter":"The kill switch","title":"The owner switches it back on","note":"Nothing was lost, and nothing needed a redeploy.","request":{"method":"POST","path":"/api/owner","body":{"action":"unpause"}},"target":{"css":"#pauseBtn"},"dwellMs":1500,"workMs":1505,"response":{"status":200,"body":{"ok":true,"message":"You unpaused the vault."}},"after":{"network":"sandbox","vault":{"id":"guard-beb4c1.test.near","balanceNear":"48.7954798349707051","paused":false,"perPaymentCapNear":"5","windowCapNear":"20","windowHours":24,"spentInWindowNear":"1.2","stats":{"paid":2,"queued":1,"blocked":6,"approved":1,"rejected":0,"total_paid":"1200000000000000000000000"}},"key":{"note":"Checked on-chain when the sandbox started."},"oracle":{"url":"http://127.0.0.1:57707","reachable":true},"pending":[],"lists":{"allow":["acme-vendor.test.near"],"deny":[]},"asks":[],"accounts":[{"id":"acme-vendor.test.near","role":"vendor","label":"allow-listed vendor"},{"id":"acme-vend0r.test.near","role":"lookalike","label":"lookalike of the vendor"},{"id":"fresh-vendor.test.near","role":"stranger","label":"a stranger"},{"id":"quick-yield-vault.test.near","role":"scam","label":"reported 3 times"}],"scenarios":[{"id":"vendor","title":"Pay the vendor","blurb":"A normal invoice: 1 NEAR to the vendor on the allow list.","expect":"paid"},{"id":"lookalike","title":"Poisoned invoice","blurb":"A web page tells the agent to pay an account one character off the real vendor.","expect":"refused by the oracle"},{"id":"stranger","title":"A stranger asks for 0.2 NEAR","blurb":"Not bad, not known: the oracle says warn, so a human must decide.","expect":"asks you, then waits for approval"},{"id":"scam","title":"The 900% APY vault","blurb":"An account three people reported to the shared registry, with evidence.","expect":"refused by the oracle"},{"id":"overcap","title":"Pay 9 NEAR","blurb":"The vendor is trusted, but the vault's cap is 5 NEAR per payment.","expect":"stopped by the vault contract"},{"id":"thief","title":"The agent's key is stolen","blurb":"A thief holding only the key skips Valet's software and tries to take the money directly.","expect":"every attempt refused by the chain"}],"busy":false,"seq":10,"events":[{"kind":"owner","action":"unpause","ok":true,"message":"You unpaused the vault.","seq":10,"ts":"2026-11-11T14:36:52.153Z"}]}}]}</script>
+<script>
+"use strict";
+/*
+ * The replay of the Valet console: what makes docs/index.html work without a server.
+ *
+ * The page is the real console page. Its `fetch` is replaced by an engine that answers the
+ * console's API from a recording of one real session (recording.json: every state and every reply
+ * is something the sandbox sent), and a bar at the bottom tells the story and can play it.
+ *
+ * Two halves in one file, so that the page can inline it and the tests can load it:
+ *   createEngine(recording, { sleep })   the pure part: a stand-in for the console's HTTP API;
+ *   startPlayer(recording)               the browser part: the fetch shim, the banner, the bar.
+ * Loaded by Node (`require`) it only exports the engine. Loaded by a page it starts the player.
+ * Plain JavaScript on purpose: the page inlines this file as it is, with no build step in between.
+ */
+(function () {
+  // =========================================================================== the engine
+
+  const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const AGENT_PATHS = new Set(["/api/scenario", "/api/pay"]);
+  const POST_PATHS = new Set(["/api/scenario", "/api/pay", "/api/owner", "/api/answer"]);
+
+  /** Does this request do what the step recorded? Compared as text, so 1 and "1" are the same. */
+  function matches(step, method, path, body) {
+    const want = step.request;
+    if (want.method !== method || want.path !== path) return false;
+    return Object.entries(want.body || {}).every(([key, value]) => body != null && String(body[key]) === String(value));
+  }
+
+  /** The viewer waits about as long as the real call took, but never for nothing and never for long. */
+  const wait = (ms) => Math.min(Math.max(ms || 0, 500), 5000);
+
+  function createEngine(recording, options) {
+    const sleep = (options && options.sleep) || realSleep;
+    const steps = recording.steps;
+    const feed = []; // every event shown so far
+    const listeners = [];
+    let current = withoutEvents(recording.initial);
+    let seq = recording.initial.seq;
+    let next = 0; // the step the viewer may do now
+    let working = null; // { index, agent, askOpen } while a call is in flight
+    let held = null; // { index, resolve }: the call that waits for the answer to a question
+
+    function withoutEvents(state) {
+      const copy = { ...state };
+      delete copy.events;
+      return copy;
+    }
+    const notify = () => listeners.forEach((listener) => listener(progress()));
+    function progress() {
+      return {
+        next,
+        total: steps.length,
+        working: working !== null,
+        workingIndex: working ? working.index : null,
+        asking: working !== null && working.askOpen,
+      };
+    }
+
+    /** What `GET /api/state?since=N` answers right now. */
+    function view(since) {
+      const base = working ? { ...current, busy: working.agent, asks: working.askOpen ? steps[working.index].asks || [] : [] } : current;
+      return { ...base, seq, events: feed.filter((e) => e.seq > since) };
+    }
+
+    function apply(step) {
+      if (!step.after) return;
+      for (const event of step.after.events || []) feed.push(event);
+      seq = step.after.seq;
+      current = withoutEvents(step.after);
+    }
+
+    const refuse = (error) => ({ status: 409, body: { ok: false, error } });
+
+    async function handle(method, rawPath, body) {
+      const url = new URL(rawPath, "http://replay.invalid");
+      if (method === "GET" && url.pathname === "/api/state") {
+        const since = Number(url.searchParams.get("since"));
+        return { status: 200, body: view(Number.isFinite(since) ? since : 0) };
+      }
+      if (method !== "POST" || !POST_PATHS.has(url.pathname)) return { status: 404, body: { ok: false, error: "no such endpoint" } };
+
+      const index = next;
+      const step = steps[index];
+      if (!step) return refuse("The recording has ended. Press Restart to watch it again.");
+      const answering = held !== null && step.request.path === "/api/answer";
+      if (working && !answering) return refuse("One thing at a time: the last action is still running.");
+      if (!matches(step, "POST", url.pathname, body)) {
+        return refuse(
+          `This page replays one recorded session, so it only does what was recorded. Next in the recording: "${step.label}". To try anything else, run npm run sandbox on your machine.`,
+        );
+      }
+      next += 1;
+
+      if (answering) {
+        // The person answered. The question closes now; the call that was waiting for it finishes a moment later.
+        const waiting = held;
+        held = null;
+        working.askOpen = false;
+        notify();
+        sleep(wait(step.workMs)).then(() => {
+          apply(steps[waiting.index]);
+          working = null;
+          notify();
+          waiting.resolve(steps[waiting.index].response);
+        });
+        return step.response;
+      }
+
+      working = { index, agent: AGENT_PATHS.has(step.request.path), askOpen: false };
+      notify();
+      await sleep(wait(step.workMs));
+      if (step.hold) {
+        working.askOpen = true;
+        notify();
+        return new Promise((resolve) => {
+          held = { index, resolve };
+        });
+      }
+      apply(step);
+      working = null;
+      notify();
+      return step.response;
+    }
+
+    return {
+      handle,
+      progress,
+      subscribe: (listener) => listeners.push(listener),
+      steps,
+    };
+  }
+
+  // =========================================================================== the player
+
+  /**
+   * What the page says about itself, first of all. The build writes the label and the text into the
+   * page's HTML as well, so that a reader without scripts (a link preview, a search crawler, an agent
+   * that fetches the page as text) gets the same first sentence as a person. The player then adds the link.
+   */
+  const BANNER = {
+    label: "Replay",
+    text: "A recording of a real session: the vault, the oracle and the chain were real, and the AI agent's decisions are the buttons. Nothing on this page is live.",
+    linkText: "Run it yourself ↗",
+    linkHref: "https://github.com/195440/valet#try-it",
+  };
+
+  const CSS = `
+.rp-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 9px 24px; background: var(--block); color: var(--paper); font: 500 12px/1.5 var(--mono); }
+.rp-banner b { padding: 1px 8px; border: 1px solid currentColor; letter-spacing: .14em; text-transform: uppercase; }
+.rp-banner a { color: inherit; text-underline-offset: 3px; }
+.rp-bar { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 24px; padding: 12px 24px 14px; background: var(--ink); color: var(--bg); border-top: 3px solid var(--sky); font: 400 13px/1.5 var(--mono); }
+.rp-step { font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--sky); }
+.rp-title { margin: 2px 0 1px; font: 700 18px/1.2 var(--display); letter-spacing: -.02em; }
+.rp-note { opacity: .86; }
+.rp-next { margin-top: 5px; font-size: 12px; opacity: .72; }
+.rp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rp-btn { appearance: none; padding: 9px 14px; border: 1px solid var(--bg); background: transparent; color: var(--bg); font: 500 12px/1 var(--mono); cursor: pointer; }
+.rp-btn:hover:not(:disabled) { background: var(--bg); color: var(--ink); }
+.rp-btn.primary { border-color: var(--sky); background: var(--sky); color: #1b1a16; }
+.rp-btn.primary:hover:not(:disabled) { background: var(--bg); border-color: var(--bg); color: var(--ink); }
+.rp-btn:disabled { opacity: .4; cursor: not-allowed; }
+.rp-ring { position: fixed; z-index: 45; pointer-events: none; border: 3px solid var(--sky); box-shadow: 0 0 0 3px var(--ink), 0 0 18px var(--sky); animation: rp-pulse 1.4s ease-in-out infinite; }
+@keyframes rp-pulse { 50% { opacity: .4; } }
+#toast { z-index: 60; bottom: calc(var(--rp-bar, 140px) + 16px); }
+.rp-note-modal { margin: 0; padding: 8px 12px; border: 1px dashed var(--line); }
+@media (prefers-reduced-motion: reduce) { .rp-ring { animation: none; } }
+@media (max-width: 760px) {
+  .rp-banner { padding: 8px 14px; }
+  .rp-bar { grid-template-columns: minmax(0, 1fr); padding: 10px 14px 12px; }
+  .rp-title { font-size: 15px; }
+  .rp-note { font-size: 12px; }
+}
+`;
+
+  /** Runs while the page is still being read, before the console's own script asks for its first state. */
+  function installShim(engine) {
+    // The console's script reads its token from the address; a replay has no secret to give it.
+    if (!new URLSearchParams(location.hash.slice(1)).get("token")) history.replaceState(null, "", location.pathname + location.search + "#token=replay");
+
+    window.fetch = async function (input, init) {
+      const raw = typeof input === "string" ? input : input.url;
+      const url = new URL(raw, location.href);
+      const method = ((init && init.method) || "GET").toUpperCase();
+      let body = null;
+      if (init && typeof init.body === "string") {
+        try {
+          body = JSON.parse(init.body);
+        } catch (e) {
+          body = null;
+        }
+      }
+      const reply = await engine.handle(method, url.pathname + url.search, body);
+      return new Response(JSON.stringify(reply.body), { status: reply.status, headers: { "content-type": "application/json" } });
+    };
+  }
+
+  function startPlayer(recording) {
+    const engine = createEngine(recording);
+    installShim(engine);
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => mountUi(engine));
+    else mountUi(engine);
+  }
+
+  /** The banner, the bar and the ring: needs the page's elements, so it waits for them. */
+  function mountUi(engine) {
+    const steps = engine.steps;
+    document.title = "Valet console (replay)";
+
+    // ---------------------------------------------------------------- small DOM helpers (text only)
+    const el = (tag, props, ...children) => {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(props || {})) {
+        if (key === "text") node.textContent = value;
+        else if (key === "onclick") node.addEventListener("click", value);
+        else node.setAttribute(key, value);
+      }
+      for (const child of children) if (child) node.append(child);
+      return node;
+    };
+    const link = (href, text) => el("a", { href, text, target: "_blank", rel: "noopener noreferrer" });
+    const visible = (node) => Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length) && !node.closest("[hidden]");
+    const findTarget = (step) =>
+      Array.from(document.querySelectorAll(step.target.css)).find((node) => (!step.target.text || node.textContent.trim() === step.target.text) && visible(node) && !node.disabled) || null;
+    const until = (check, timeoutMs) =>
+      new Promise((resolve) => {
+        const started = Date.now();
+        const tick = () => {
+          const value = check();
+          if (value) resolve(value);
+          else if (Date.now() - started > timeoutMs) resolve(null);
+          else setTimeout(tick, 100);
+        };
+        tick();
+      });
+
+    // ---------------------------------------------------------------- the page around the console
+    const style = el("style");
+    style.textContent = CSS;
+    document.head.append(style);
+
+    // The banner's words are in the page already (see BANNER). Here it gets its link; a page without one gets the whole banner.
+    let banner = document.querySelector(".rp-banner");
+    if (!banner) {
+      banner = el("div", { class: "rp-banner", role: "note" }, el("b", { text: BANNER.label }), el("span", { text: BANNER.text }));
+      document.body.prepend(banner);
+    }
+    banner.append(link(BANNER.linkHref, BANNER.linkText));
+    const stepLabel = el("div", { class: "rp-step" });
+    const title = el("div", { class: "rp-title" });
+    const note = el("div", { class: "rp-note" });
+    const upNext = el("div", { class: "rp-next" });
+    const play = el("button", { class: "rp-btn primary", type: "button", text: "▶ Play" });
+    const once = el("button", { class: "rp-btn", type: "button", text: "Do the next step" });
+    const where = el("button", { class: "rp-btn", type: "button", text: "Show me the button" });
+    const restart = el("button", { class: "rp-btn", type: "button", text: "↺ Restart", onclick: () => location.reload() });
+    const bar = el(
+      "section",
+      { class: "rp-bar", "aria-label": "Replay controls" },
+      el("div", { "aria-live": "polite" }, stepLabel, title, note, upNext),
+      el("div", { class: "rp-actions" }, play, once, where, restart),
+    );
+    const ring = el("div", { class: "rp-ring", hidden: "" });
+    document.body.append(bar, ring);
+
+    // The console's short explanation says "live" next to it. Here it is a recording.
+    const liveTag = document.querySelector(".termbar b");
+    if (liveTag) liveTag.textContent = "replay";
+
+    // The console's question to the human: this replay recorded the answer "Yes", so "No" has nothing to show.
+    const askNo = document.getElementById("askNo");
+    if (askNo) {
+      askNo.disabled = true;
+      askNo.title = "The recording has the answer Yes";
+      askNo.parentElement.after(el("p", { class: "muted small rp-note-modal", text: "In this replay the recorded answer is Yes. Run npm run sandbox to answer No yourself." }));
+    }
+
+    // ---------------------------------------------------------------- what the bar says
+    let playing = false;
+    let busyTour = false;
+    let quiet = false; // while the tour lets the viewer read a result, no ring points anywhere
+
+    function paint() {
+      const p = engine.progress();
+      const shown = p.working ? p.workingIndex : p.next - 1;
+      const upcoming = steps[p.next];
+      if (shown < 0) {
+        stepLabel.textContent = "Valet console, replayed";
+        title.textContent = "The agent pays. The vault decides.";
+        note.textContent = "Press Play to watch the session, or press the highlighted button to play the AI agent yourself.";
+      } else {
+        const step = steps[shown];
+        const state = p.asking ? "   ·   waiting for the answer…" : p.working ? "   ·   running…" : "";
+        stepLabel.textContent = (step.chapter || "") + "   ·   step " + (shown + 1) + " of " + steps.length + state;
+        title.textContent = step.title;
+        note.textContent = step.note;
+      }
+      upNext.textContent = upcoming ? "Up next: " + upcoming.title : "That was the whole recording. Watch it again, or run it on your own machine.";
+      play.textContent = !upcoming ? "↺ Watch again" : playing ? "❚❚ Pause" : p.next === 0 ? "▶ Play" : "▶ Keep playing";
+      once.disabled = !upcoming || busyTour || p.working;
+      where.disabled = !upcoming || (p.working && !p.asking);
+      document.documentElement.style.setProperty("--rp-bar", bar.offsetHeight + "px");
+      document.body.style.paddingBottom = bar.offsetHeight + 24 + "px";
+    }
+    engine.subscribe(paint);
+    window.addEventListener("resize", paint);
+
+    // ---------------------------------------------------------------- the ring on what to press next
+    // Between the sticky top bar and this bar: the part of the screen where a person looks.
+    function reveal(target) {
+      const r = target.getBoundingClientRect();
+      const top = 96;
+      const bottom = innerHeight - bar.offsetHeight - 24;
+      if (r.top < top || r.bottom > bottom) window.scrollBy({ top: r.top + r.height / 2 - (top + bottom) / 2, behavior: "smooth" });
+    }
+    const nextTarget = () => {
+      const p = engine.progress();
+      // Idle, or waiting for the answer to the question: the control to press is the next step's.
+      const step = (!p.working || p.asking) && steps[p.next];
+      return step ? findTarget(step) : null;
+    };
+    function frame() {
+      const target = quiet ? null : nextTarget();
+      if (!target) {
+        ring.hidden = true;
+      } else {
+        const r = target.getBoundingClientRect();
+        ring.hidden = false;
+        ring.style.left = r.left - 5 + "px";
+        ring.style.top = r.top - 5 + "px";
+        ring.style.width = r.width + 10 + "px";
+        ring.style.height = r.height + 10 + "px";
+      }
+      requestAnimationFrame(frame);
+    }
+    where.addEventListener("click", () => {
+      const target = nextTarget();
+      if (target) reveal(target);
+    });
+
+    // ---------------------------------------------------------------- playing it for the viewer
+    const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function doNext(lead) {
+      const index = engine.progress().next;
+      const step = steps[index];
+      if (!step) return false;
+      quiet = false;
+      const target = await until(() => findTarget(step), 8000);
+      if (!target) return false;
+      reveal(target);
+      await pause(lead + 700);
+      target.click();
+      const done = await until(() => {
+        const p = engine.progress();
+        return p.next > index && (!p.working || p.asking);
+      }, 30000);
+      return Boolean(done);
+    }
+
+    once.addEventListener("click", async () => {
+      busyTour = true;
+      paint();
+      await doNext(400);
+      busyTour = false;
+      paint();
+    });
+
+    play.addEventListener("click", async () => {
+      if (!steps[engine.progress().next]) {
+        location.reload();
+        return;
+      }
+      if (playing) {
+        playing = false;
+        paint();
+        return;
+      }
+      playing = true;
+      busyTour = true;
+      paint();
+      while (playing && steps[engine.progress().next]) {
+        const index = engine.progress().next;
+        const ok = await doNext(index === 0 ? 600 : 300);
+        if (!ok) break;
+        // Let the page's own polling draw the result, then let the viewer read it.
+        quiet = true;
+        await pause(1100 + (steps[index].dwellMs || 3000));
+      }
+      quiet = false;
+      playing = false;
+      busyTour = false;
+      paint();
+    });
+
+    paint();
+    requestAnimationFrame(frame);
+  }
+
+  // =========================================================================== start
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createEngine, matches, BANNER };
+  } else {
+    startPlayer(JSON.parse(document.getElementById("valet-recording").textContent));
+  }
+})();
+</script>
+<script>
+"use strict";
+(() => {
+  const $ = (id) => document.getElementById(id);
+  // Every piece of text from the chain, the oracle or the agent is put in with textContent / text nodes, never as HTML.
+  const h = (tag, props, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v === false || v === null || v === undefined) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : String(v));
+    }
+    for (const kid of kids.flat()) if (kid !== null && kid !== undefined && kid !== false) el.append(kid);
+    return el;
+  };
+
+  // ---------------------------------------------------------------- dot-matrix pictures
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const svg = (tag, props) => {
+    const el = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(props)) el.setAttribute(k, String(v));
+    return el;
+  };
+  /** rows: equal-length strings, "1" for a lit dot. `off: false` draws only the lit dots. */
+  const dots = (rows, options) => {
+    const withOff = !options || options.off !== false;
+    const root = svg("svg", { viewBox: "0 0 " + rows[0].length + " " + rows.length, class: "dots", "aria-hidden": "true", focusable: "false" });
+    rows.forEach((row, y) => {
+      [...row].forEach((c, x) => {
+        if (c === "1" || withOff) root.append(svg("rect", { x: x + 0.1, y: y + 0.1, width: 0.8, height: 0.8, class: c === "1" ? "on" : "off" }));
+      });
+    });
+    return root;
+  };
+  const picture = (rows) => rows.map((r) => [...r].map((c) => (c === "#" ? "1" : "0")).join(""));
+
+  const GLYPHS = {
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+    "3": ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+    "6": ["00110", "01000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+    ".": ["0", "0", "0", "0", "0", "0", "1"],
+    "<": ["00010", "00100", "01000", "10000", "01000", "00100", "00010"],
+    "?": ["01110", "10001", "00001", "00110", "00100", "00000", "00100"],
+  };
+  const numerals = (text) => {
+    const glyphs = [...text].map((c) => GLYPHS[c] || GLYPHS["?"]);
+    return Array.from({ length: 7 }, (_, r) => glyphs.map((g) => g[r]).join("0"));
+  };
+
+  const ICONS = {
+    vendor: { code: "PAY", art: ["........", "......#.", ".....##.", "#...##..", "##.##...", ".###....", "..#.....", "........"] },
+    lookalike: { code: "FAKE", art: ["...##...", "...##...", "..#..#..", "..#..#..", ".#.##.#.", ".#.##.#.", "#......#", "########"] },
+    stranger: { code: "ASK", art: ["..####..", ".##..##.", ".##..##.", "....##..", "...##...", "...##...", "........", "...##..."] },
+    scam: { code: "SCAM", art: ["##....#.", "##...#..", "....#...", "...#....", "..#.....", ".#...##.", "#....##.", "........"] },
+    overcap: { code: "CAP", art: ["########", "........", "..#.....", "..#.#...", "#.#.#.#.", "#.#.#.#.", "#.#.#.#.", "########"] },
+    thief: { code: "KEY", art: [".####...", "##..##..", "##..##..", ".####...", "..##....", "..###...", "..##....", "..###..."] },
+  };
+  const ASTERISK = picture(["#.#.#", ".###.", "#####", ".###.", "#.#.#"]);
+  const MOON = picture(["..##.....", ".###.....", "###......", "###......", "###......", "####.....", "#####...#", ".#######.", "..#####.."]);
+  const SUN = picture(["....#....", ".#..#..#.", "..#...#..", "...###...", "##.###.##", "...###...", "..#...#..", ".#..#..#.", "....#...."]);
+
+  // ---------------------------------------------------------------- theme
+  let theme = "light";
+  try { if (localStorage.getItem("valet-theme") === "dark") theme = "dark"; } catch (e) { /* private mode: light */ }
+  const applyTheme = () => {
+    document.documentElement.dataset.theme = theme;
+    const btn = $("themeBtn");
+    btn.setAttribute("aria-label", theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme");
+    btn.replaceChildren(dots(theme === "dark" ? SUN : MOON, { off: false }));
+  };
+  applyTheme();
+  $("themeBtn").addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem("valet-theme", theme); } catch (e) { /* not remembered */ }
+    applyTheme();
+  });
+
+  const fromHash = new URLSearchParams(location.hash.slice(1)).get("token");
+  if (fromHash) { try { sessionStorage.setItem("valet-token", fromHash); } catch (e) { /* private mode: keep it in memory only */ } }
+  const token = fromHash || (() => { try { return sessionStorage.getItem("valet-token"); } catch (e) { return null; } })();
+  if (fromHash) history.replaceState(null, "", location.pathname);
+  if (!token) { $("gate").hidden = false; return; }
+  $("app").hidden = false;
+
+  const TICKER = [
+    "Give an AI agent a wallet", "without giving it your keys", "The vault enforces the limits",
+    "The oracle checks the receiver", "You approve the odd ones", "Built at NEAR HACKATHON", "AI Security & Defense",
+  ];
+  // Twice, so the strip can slide by exactly half its width and start over without a jump.
+  const tickerHalf = () => h("div", { class: "half" }, TICKER.flatMap((t) => [h("span", { text: t }), dots(ASTERISK, { off: false })]));
+  $("ticker").replaceChildren(tickerHalf(), tickerHalf());
+
+  const toast = (message) => {
+    const el = $("toast");
+    el.textContent = message;
+    el.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { el.hidden = true; }, 6000);
+  };
+
+  async function api(path, body) {
+    const res = await fetch(path, {
+      method: body === undefined ? "GET" : "POST",
+      headers: { "x-valet-token": token, ...(body === undefined ? {} : { "content-type": "application/json" }) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      cache: "no-store",
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* not JSON */ }
+    if (!res.ok) {
+      const error = new Error((data && data.error) || ("HTTP " + res.status));
+      error.status = res.status;
+      throw error;
+    }
+    return data;
+  }
+
+  let seq = 0;
+  let state = null;
+  let busyLocal = false;
+  let eventCount = 0;
+
+  const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const short = (hash) => (hash ? hash.slice(0, 10) + "…" : "");
+  const signed = (n) => (n > 0 ? "+" + n : String(n));
+  // The chain has 24 decimals; a person wants four.
+  const near4 = (value) => {
+    if (value === null || value === undefined) return "unknown";
+    const n = Number(value);
+    if (!Number.isFinite(n)) return String(value);
+    if (n === 0) return "0";
+    return n < 0.0001 ? "<0.0001" : String(Math.round(n * 10000) / 10000);
+  };
+
+  // ---------------------------------------------------------------- feed
+  const STAGES = {
+    paid: ["paid", "PAID"],
+    queued: ["queued", "QUEUED"],
+    blocked: ["stopped", "BLOCKED"],
+    refused: ["stopped", "REFUSED"],
+    error: ["stopped", "ERROR"],
+  };
+
+  function whoStopped(e) {
+    if (e.status === "paid") return "Sent by the vault. The oracle's signed verdict was checked on-chain.";
+    if (e.status === "queued") return "Nothing moved yet. The payment waits in the vault's approval queue" + (e.pendingId ? " as #" + e.pendingId : "") + ".";
+    if (e.status === "refused" && e.stage === "oracle") return "Stopped by the oracle before anything was signed or sent.";
+    if (e.status === "refused" && e.reason === "user_denied") return "You said no. Nothing was signed or sent.";
+    if (e.status === "refused") return "No human could be asked, so it was refused. Nothing was signed or sent.";
+    if (e.status === "blocked") return "Stopped by the vault contract on-chain" + (e.reason ? ": " + e.reason : "") + ".";
+    return "The chain call failed" + (e.reason ? ": " + e.reason : "") + ".";
+  }
+
+  function reasonList(reasons) {
+    if (!reasons.length) return null;
+    return h("ul", { class: "reasons" }, reasons.map((r) => {
+      const reports = r.evidence && Array.isArray(r.evidence.reports) ? r.evidence.reports : [];
+      return h("li", {},
+        h("span", { class: "w " + (r.weight > 0 ? "pos" : r.weight < 0 ? "neg" : ""), text: signed(r.weight) }),
+        h("div", {},
+          h("span", { class: "code", text: r.code }), " ", h("span", { text: r.message }),
+          reports.slice(0, 3).map((rep) => h("div", { class: "evidence", text: "evidence: " + String(rep.evidence_url || "") })),
+        ));
+    }));
+  }
+
+  function eventNode(e) {
+    if (e.kind === "payment") {
+      const [cls, label] = STAGES[e.status] || ["stopped", e.status.toUpperCase()];
+      return h("article", { class: "event " + cls },
+        h("div", { class: "ehead" },
+          h("span", { class: "badge " + cls, text: label }),
+          h("span", { class: "who", text: e.amountNear + " NEAR" }),
+          h("span", { class: "muted", text: "to" }),
+          h("code", { text: e.receiver }),
+          h("span", { class: "time", text: fmtTime(e.ts) })),
+        h("div", { text: whoStopped(e) }),
+        e.verdict ? h("div", { class: "small dim", text: "Oracle: " + e.verdict + " · risk score " + e.score }) : null,
+        reasonList(e.reasons),
+        e.memo ? h("div", { class: "memo" }, "The agent's note (untrusted): ", h("q", { text: e.memo })) : null,
+        e.txHash ? h("div", { class: "tx" }, "transaction ", h("code", { text: short(e.txHash), title: e.txHash })) : null);
+    }
+    if (e.kind === "owner") {
+      return h("article", { class: "event owner" },
+        h("div", { class: "ehead" }, h("span", { class: "badge owner", text: "YOU" }), h("span", { class: "who", text: e.ok ? e.message : "That did not work: " + e.message }), h("span", { class: "time", text: fmtTime(e.ts) })));
+    }
+    if (e.kind === "thief") {
+      return h("article", { class: "event thief" },
+        h("div", { class: "ehead" },
+          h("span", { class: "badge stopped", text: "THIEF" }),
+          h("span", { class: "who", text: e.results.length + " attempts with the stolen key, " + e.accepted + " got through" }),
+          h("span", { class: "time", text: fmtTime(e.ts) })),
+        h("div", { class: "small dim", text: "Sent straight to the chain, with Valet's software skipped." }),
+        h("ul", { class: "attempts" }, e.results.map((r) => h("li", {},
+          h("span", { class: "mark-x " + (r.outcome === "accepted" ? "bad" : ""), text: r.outcome === "accepted" ? "!" : "×" }),
+          h("div", {}, h("div", { text: r.label }), h("div", { class: "by", text: r.outcome === "accepted" ? r.detail : "refused by the " + r.by + ": " + r.detail })))))
+      );
+    }
+    return h("article", { class: "event owner" }, h("div", { text: e.text || "" }));
+  }
+
+  // The newest result also goes in the top bar, so it is seen without scrolling down to the log.
+  function latestNode(e) {
+    if (e.kind === "payment") {
+      const [cls, label] = STAGES[e.status] || ["stopped", e.status.toUpperCase()];
+      return [h("span", { class: "badge " + cls, text: label }), h("span", { class: "t" }, h("b", { text: e.amountNear + " NEAR" }), " to " + e.receiver)];
+    }
+    if (e.kind === "thief") return [h("span", { class: "badge stopped", text: "THIEF" }), h("span", { class: "t", text: e.results.length + " attempts with the stolen key, " + e.accepted + " got through" })];
+    if (e.kind === "owner") return [h("span", { class: "badge owner", text: "YOU" }), h("span", { class: "t", text: e.ok ? e.message : "That did not work: " + e.message })];
+    return [h("span", { class: "badge owner", text: "NOTE" }), h("span", { class: "t", text: e.text || "" })];
+  }
+
+  function addEvents(events) {
+    if (!events.length) return;
+    $("feedEmpty").hidden = true;
+    const feed = $("feed");
+    for (const e of events) feed.prepend(eventNode(e));
+    $("latestText").replaceChildren(...latestNode(events[events.length - 1]));
+    eventCount += events.length;
+    $("feedCount").textContent = eventCount + (eventCount === 1 ? " event" : " events");
+  }
+
+  // ---------------------------------------------------------------- panels
+  let lastSignature = {};
+  const once = (name, value, draw) => {
+    const sig = JSON.stringify(value);
+    if (lastSignature[name] === sig) return;
+    lastSignature[name] = sig;
+    draw();
+  };
+
+  function drawBalance(text) {
+    const rows = numerals(/^[<0-9.]+$/.test(text) ? text : "?");
+    const art = dots(rows);
+    art.setAttribute("width", String(rows[0].length * 9));
+    art.setAttribute("height", String(rows.length * 9));
+    $("balancePx").replaceChildren(art);
+  }
+
+  function drawVault(s) {
+    const v = s.vault;
+    $("net").textContent = s.network + " · local NEAR chain";
+    $("vaultId").textContent = v.id;
+    $("balance").textContent = near4(v.balanceNear);
+    drawBalance(near4(v.balanceNear));
+    $("perTx").textContent = v.perPaymentCapNear === null ? "unknown" : near4(v.perPaymentCapNear) + " NEAR";
+    const win = v.windowCapNear === null ? null : Number(v.windowCapNear);
+    const spent = v.spentInWindowNear === null ? null : Number(v.spentInWindowNear);
+    $("windowLabel").textContent = v.windowHours ? "Per " + v.windowHours + " hours, at most" : "Per day, at most";
+    $("windowText").textContent = win === null ? "unknown" : (spent === null ? "?" : near4(v.spentInWindowNear)) + " / " + near4(v.windowCapNear) + " NEAR";
+    const pct = win && spent !== null ? Math.min(100, (spent / win) * 100) : 0;
+    $("windowBar").firstElementChild.style.width = pct + "%";
+    $("windowBar").classList.toggle("hot", pct >= 75);
+    const st = $("status");
+    st.className = "pill " + (v.paused === null ? "unknown" : v.paused ? "paused" : "ok");
+    st.textContent = v.paused === null ? "vault unreadable" : v.paused ? "Vault paused" : "Vault active";
+    $("pausedNotice").hidden = v.paused !== true;
+    const stats = $("stats");
+    stats.replaceChildren(...["paid", "queued", "blocked", "approved", "rejected"].map((k) =>
+      h("div", { class: "stat" }, h("b", { text: v.stats ? String(v.stats[k]) : "–" }), h("span", { text: k }))));
+    const btn = $("pauseBtn");
+    btn.textContent = v.paused ? "Unpause the vault" : "Pause the vault";
+    btn.className = "btn block " + (v.paused ? "" : "danger");
+    btn.dataset.action = v.paused ? "unpause" : "pause";
+  }
+
+  function drawOracle(s) {
+    $("oracleDot").className = "dot " + (s.oracle.reachable ? "on" : "off");
+    $("oracleText").textContent = s.oracle.reachable ? "Reachable" : "Unreachable: the agent's payments are refused";
+    $("oracleUrl").textContent = s.oracle.url;
+    $("keyNote").textContent = s.key.note || "";
+  }
+
+  function drawScenarios(s) {
+    const root = $("scenarios");
+    root.replaceChildren(...s.scenarios.map((sc, i) => {
+      const icon = ICONS[sc.id] || { code: "RUN", art: ICONS.vendor.art };
+      return h("button", {
+        class: "scenario" + (sc.id === "thief" ? " danger" : ""), type: "button", "data-id": sc.id,
+        onclick: () => runScenario(sc.id),
+      },
+        h("span", { class: "s-top" },
+          h("span", { class: "s-code", text: "[ " + String(i + 1).padStart(2, "0") + " / " + icon.code + " ]" }),
+          h("span", { class: "s-ico" }, dots(picture(icon.art), { off: false }))),
+        h("strong", { text: sc.title }),
+        h("span", { class: "blurb", text: sc.blurb }),
+        h("span", { class: "bottom" },
+          h("span", { class: "expect" }, h("em", { text: "Expected" }), " " + sc.expect),
+          h("span", { class: "go" }, "Run", h("i", { "aria-hidden": "true", text: "↗" }))));
+    }));
+    $("knownAccounts").replaceChildren(...s.accounts.map((a) => h("option", { value: a.id, label: a.label })));
+    lastSignature.busy = undefined;
+  }
+
+  function drawBusy(s) {
+    const busy = s.busy || busyLocal;
+    for (const b of $("scenarios").querySelectorAll("button")) b.disabled = busy;
+    $("cSend").disabled = busy;
+    $("working").textContent = busy ? (s.asks.length ? "Waiting for your answer…" : "The agent is working…") : "";
+  }
+
+  function drawQueue(s) {
+    const root = $("queue");
+    if (s.pending === null) { root.replaceChildren(h("p", { class: "muted mt10", text: "Could not read the queue." })); return; }
+    if (!s.pending.length) { root.replaceChildren(h("p", { class: "muted mt10", text: "Nothing is waiting." })); return; }
+    root.replaceChildren(...s.pending.map((p) => h("div", { class: "pending" },
+      h("div", {}, h("b", { text: "#" + p.id + "  " + (p.amountNear ?? "?") + " NEAR" }), h("span", { class: "muted", text: "  to" })),
+      h("code", { text: p.receiver }),
+      h("div", { class: "muted small", text: "expires in about " + p.expiresInMin + " min" }),
+      h("div", { class: "actions" },
+        h("button", { class: "btn small", type: "button", text: "Approve", onclick: () => owner("approve", p.id) }),
+        h("button", { class: "btn ghost small plain", type: "button", text: "Reject", onclick: () => owner("reject", p.id) })))));
+  }
+
+  function drawLists(s) {
+    const draw = (rootId, accounts, undo) => {
+      const root = $(rootId);
+      if (!accounts) { root.replaceChildren(h("span", { class: "muted small", text: "unreadable" })); return; }
+      if (!accounts.length) { root.replaceChildren(h("span", { class: "muted small", text: "empty" })); return; }
+      root.replaceChildren(...accounts.map((a) => h("span", { class: "tag" }, h("code", { text: a }),
+        h("button", { type: "button", "aria-label": "Remove " + a, title: "Remove", text: "×", onclick: () => owner(undo, a) }))));
+    };
+    draw("allowTags", s.lists && s.lists.allow, "unallow");
+    draw("denyTags", s.lists && s.lists.deny, "undeny");
+  }
+
+  // The question to the human.
+  let shownAsk = null;
+  function drawAsk(s) {
+    const overlay = $("askOverlay");
+    const ask = s.asks[0];
+    if (!ask) { overlay.hidden = true; shownAsk = null; return; }
+    if (shownAsk !== ask.id) {
+      shownAsk = ask.id;
+      $("askBody").replaceChildren(
+        h("div", { class: "big" }, "Your AI agent wants to pay ", h("b", { text: ask.amountNear + " NEAR" }), " to ", h("code", { text: ask.receiver }), "."),
+        h("div", {}, "The Valet oracle says ", h("b", { text: ask.verdict.toUpperCase() }), " (risk score " + ask.score + ")", reasonList(ask.reasons)),
+        ask.memo ? h("div", { class: "note small" }, "The agent's note (untrusted): ", h("q", { text: ask.memo })) : null,
+        h("p", { class: "muted small", text: "Yes does not send money. It puts the payment in the vault's approval queue, and NEAR moves only after you approve it there." }));
+      $("askYes").onclick = () => answer(ask.id, true);
+      $("askNo").onclick = () => answer(ask.id, false);
+      overlay.hidden = false;
+      $("askNo").focus();
+    }
+    $("askTimer").textContent = "No answer counts as no. " + ask.secondsLeft + " s left.";
+  }
+
+  function render(s) {
+    state = s;
+    once("vault", [s.vault, s.network], () => drawVault(s));
+    once("oracle", [s.oracle, s.key], () => drawOracle(s));
+    once("scenarios", [s.scenarios, s.accounts], () => drawScenarios(s));
+    once("queue", s.pending, () => drawQueue(s));
+    once("lists", s.lists, () => drawLists(s));
+    drawBusy(s);
+    drawAsk(s);
+    addEvents(s.events);
+    seq = s.seq;
+  }
+
+  // ---------------------------------------------------------------- actions
+  let refreshing = false;
+  async function refresh() {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      render(await api("/api/state?since=" + seq));
+      if ($("status").dataset.lost) { delete $("status").dataset.lost; }
+    } catch (e) {
+      if (e.status === 401) { $("app").hidden = true; $("gate").hidden = false; return; }
+      $("status").className = "pill unknown";
+      $("status").textContent = "sandbox not reachable";
+      lastSignature.vault = undefined;
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  async function guarded(task) {
+    busyLocal = true;
+    if (state) drawBusy(state);
+    try { return await task(); }
+    catch (e) { toast(e.message); }
+    finally { busyLocal = false; await refresh(); }
+  }
+
+  const runScenario = (id) => guarded(() => api("/api/scenario", { id }));
+  const owner = (action, arg) => guarded(() => api("/api/owner", { action, arg }));
+  const answer = async (id, approve) => {
+    $("askOverlay").hidden = true;
+    try { await api("/api/answer", { id, approve }); } catch (e) { toast(e.message); }
+    await refresh();
+  };
+
+  $("pauseBtn").addEventListener("click", (ev) => owner(ev.currentTarget.dataset.action || "pause"));
+  $("customForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    guarded(() => api("/api/pay", { receiver: $("cReceiver").value, amount_near: $("cAmount").value, memo: $("cMemo").value }));
+  });
+  for (const [form, input, action] of [["allowForm", "allowInput", "allow"], ["denyForm", "denyInput", "deny"]]) {
+    $(form).addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const value = $(input).value.trim();
+      if (!value) return;
+      owner(action, value).then(() => { $(input).value = ""; });
+    });
+  }
+
+  refresh();
+  setInterval(refresh, 900);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Nothing built or downloaded on the host may enter the image: node_modules and the sandbox binary
+# in packages/e2e/.cache are for the host's platform, the image gets its own.
+.git
+.github
+**/.valet
+**/.cache
+**/node_modules
+**/target
+**/dist
+demo/out
+*.log
+.DS_Store

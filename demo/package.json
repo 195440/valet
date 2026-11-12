@@ -1,0 +1,27 @@
+{
+  "name": "@valet/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/demo.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "sandbox": "tsx src/sandbox.ts",
+    "testnet": "tsx src/testnet.ts",
+    "replay:record": "tsx src/replay/record.ts",
+    "replay:build": "tsx src/replay/build.ts"
+  },
+  "dependencies": {
+    "@valet/client": "*",
+    "@valet/e2e": "*",
+    "@valet/mcp": "*",
+    "@valet/oracle": "*",
+    "near-api-js": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

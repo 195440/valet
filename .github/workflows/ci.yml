@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: typecheck, unit tests, attack demo
+    # Ubuntu 24.04 has glibc 2.39, which the nearcore sandbox binary needs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Remember the nearcore sandbox binary
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/.cache
+          key: near-sandbox-2.14.0-${{ runner.os }}-${{ runner.arch }}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:unit
+      # Real contracts on a real local nearcore 2.14.0: a hijacked agent tries to drain the vault.
+      # The demo asserts every claim, so a green run is the proof.
+      - run: npm run demo

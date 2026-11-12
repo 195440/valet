@@ -1,0 +1,32 @@
+name: End-to-end
+
+# About ten minutes on a real nearcore sandbox. Kept apart from CI so that a download hiccup
+# cannot turn the main badge red.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: end-to-end tests on the real chain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Remember the nearcore sandbox binary
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/.cache
+          key: near-sandbox-2.14.0-${{ runner.os }}-${{ runner.arch }}
+      - run: npm ci
+      - run: npm run test:e2e

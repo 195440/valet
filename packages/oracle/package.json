@@ -1,0 +1,20 @@
+{
+  "name": "@valet/oracle",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "bin": {
+    "valet-oracle": "./src/cli.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "start": "tsx src/cli.ts serve",
+    "lookup": "tsx src/cli.ts lookup"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

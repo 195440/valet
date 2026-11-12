@@ -1,0 +1,21 @@
+[package]
+name = "valet-registry"
+version = "0.1.0"
+edition = "2021"
+description = "Valet registry: community scam reports that must carry an evidence link."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "5.30"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

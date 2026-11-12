@@ -1,0 +1,27 @@
+{
+  "name": "valet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Give an AI agent a wallet without giving it your keys: a NEAR-native spending guard.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "demo"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "test:unit": "npm test -w @valet/oracle -w @valet/client -w @valet/mcp -w @valet/demo",
+    "test:e2e": "npm test -w @valet/e2e",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "demo": "npm run start -w @valet/demo",
+    "sandbox": "npm run sandbox -w @valet/demo",
+    "testnet": "npm run testnet -w @valet/demo --",
+    "replay:record": "npm run replay:record -w @valet/demo --",
+    "replay:build": "npm run replay:build -w @valet/demo",
+    "lookup": "npm run lookup -w @valet/oracle --"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
